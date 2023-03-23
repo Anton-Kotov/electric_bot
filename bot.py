@@ -12,12 +12,18 @@ async def main():
     env = Env()
     env.read_env()
     BOT_TOKEN = env.str("TOKEN")
-    bot = Bot(token=BOT_TOKEN)
+    bot = Bot(token=BOT_TOKEN, parse_mode="HTML")
     dp = Dispatcher(bot, storage=MemoryStorage())
 
     register_all_handlers(dp)
 
-    await dp.start_polling()
+    try:
+        await dp.start_polling()
+
+    finally:
+        await dp.storage.close()
+        await dp.storage.wait_closed()
+        await dp.stop_polling()
 
 
 if __name__ == "__main__":
