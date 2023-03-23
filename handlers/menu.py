@@ -2,7 +2,8 @@ from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
 from aiogram.types import InputMediaPhoto
 
-from keyboards.menu import calculate, main_keyboard, count_keyboard, menu_cd, select_cd
+from keyboards.menu import calculate, main_keyboard, count_keyboard, menu_cd, select_cd, new_calc
+from menu_inf import photo
 
 
 async def start(msg: types.Message, state: FSMContext):
@@ -21,21 +22,20 @@ async def start(msg: types.Message, state: FSMContext):
 
 async def calculate_net(call: types.CallbackQuery, state: FSMContext, *args, **kwargs):
 
-    markup = await main_keyboard(state)
-    caption = "Выберите категорию:"
-    media = InputMediaPhoto(caption=caption,
-                            media="https://ремонт-павловский-посад.рф/wp-content/uploads/2018/05/777.jpg")
-    await call.message.edit_media(media=media, reply_markup=markup)
+    if "photo" in call.message:
+        markup = await main_keyboard(state)
+        caption = "Выберите категорию:"
+        media = InputMediaPhoto(caption=caption,
+                                media="https://ремонт-павловский-посад.рф/wp-content/uploads/2018/05/777.jpg")
+        await call.message.edit_media(media=media, reply_markup=markup)
+    else:
+        markup = await main_keyboard(state)
+        caption = "Выберите категорию:"
+        photo = "https://ремонт-павловский-посад.рф/wp-content/uploads/2018/05/777.jpg"
+        await call.message.answer_photo(photo=photo, caption=caption, reply_markup=markup)
 
 async def enter_count(call: types.CallbackQuery, state: FSMContext, count_name,  callback_data, *args, **kwargs):
 
-    photo = {
-        "Розетки": "https://zakaz64.ru/upload/iblock/c56/c56186551643e58f3abe2b73c715cdbd.jpeg",
-        "Выключатели": "https://deshevo-stroi.ru/images/stories/virtuemart/category/viklyuchatel.jpg",
-        "Бра": "https://dom-decora.ru/upload/iblock/712/712f61c642f1dd223643fb37080b4430.jpg",
-        "Потолочный свет": "https://www.svetlux.ru/images/pics1/products/7/9/9/b/799b6ec588d45e91b8774eb254ca80b7.jpg",
-        "Штробление стен": "https://fast.shkola-remonta.com/wp-content/uploads/drilling.jpg"
-    }
 
     async with state.proxy() as data:
         count_name = callback_data["count_name"]
@@ -53,6 +53,7 @@ async def enter_count(call: types.CallbackQuery, state: FSMContext, count_name, 
                                 media=photo[count_name])
         markup = await count_keyboard(state, count_name)
         await call.message.edit_media(media=media, reply_markup=markup)
+
 
 async def navigate(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
     current_level = callback_data.get('level')
@@ -76,10 +77,45 @@ async def final_count(call: types.CallbackQuery, state: FSMContext):
         bra = data["Бра"]
         seiling_light = data["Потолочный свет"]
         shtroblenie_walls = data["Штробление стен"]
-    text = f"Итоговый расчет:\n" \
-           f"розетки\n" \
-           f"кабель = 4.35м * {soket} = {4.35*soket}м * 180р. = {int(4.35*soket*180)}р"
+    text = f"<b>Итоговый расчет:</b>\n" \
+           f"---------------------------------\n" \
+           f"<b>Розетки</b>\n" \
+           f"кабель = {4.35*soket}м * 180р. = {int(4.35*soket*180)}р\n" \
+           f"подрозетник = {soket} * 480 = {480 * soket}р\n" \
+           f"---------------------------------\n" \
+           f"<b>Выключатели</b>\n" \
+           f"кабель = {3.85*switch}м * 180р. = {int(3.85*switch*180)}р\n" \
+           f"подрозетник = 480р * {switch} = {480 * switch}р\n" \
+           f"---------------------------------\n" \
+           f"<b>Бра</b>\n" \
+           f"кабель = {1.4*bra}м * 180р. = {int(1.4*bra*180)}р\n" \
+           f"---------------------------------\n" \
+           f"<b>Потолочный свет</b>\n" \
+           f"кабель = {1.4*seiling_light}м * 180р. = {int(1.4*seiling_light*180)}р\n" \
+           f"закладная = 100р * {seiling_light} = {480 * seiling_light}р\n" \
+           f"---------------------------------\n" \
+           f"<b>Штробление стен</b>\n" \
+           f"кабель = {shtroblenie_walls}м * 180р. = {int(shtroblenie_walls*180)}р"
+    cable = int(4.35*soket + 3.85*switch + 1.4*seiling_light + 1.4*bra)
+    wall_plate = soket + switch
+    text_final = f"Кабель = {cable}м * 180 = {cable * 180}р\n" \
+                 f"Подрозетник = {wall_plate}шт * 480 = {wall_plate * 480}р\n" \
+                 f"Закладная = {seiling_light}шт * 100 = {seiling_light * 100}\n" \
+                 f"Штробление стен = {shtroblenie_walls} * 180 = {shtroblenie_walls * 180}р\n" \
+                 f"---------------------------------\n" \
+                 f"Всего = <b>{cable * 180 + wall_plate * 480 + seiling_light * 100 + shtroblenie_walls * 180}р</b>"
+
+    async with state.proxy() as data:
+        data["Розетки"] = 0
+        data["Выключатели"] = 0
+        data["Бра"] = 0
+        data["Потолочный свет"] = 0
+        data["Штробление стен"] = 0
+
     await call.message.answer(text=text)
+    await call.message.answer(text=text_final, reply_markup=new_calc)
+    await call.answer()
+
 
 
 def register_menu(dp: Dispatcher):

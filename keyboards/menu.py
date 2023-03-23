@@ -2,8 +2,14 @@ from aiogram.dispatcher import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.callback_data import CallbackData
 
+from menu_inf import count_name
+
 calculate = InlineKeyboardMarkup()
 calculate.insert(InlineKeyboardButton(text="Произвести расчет",
+                                      callback_data="calculate"))
+
+new_calc = InlineKeyboardMarkup()
+new_calc.insert(InlineKeyboardButton(text="Новый расчет",
                                       callback_data="calculate"))
 
 menu_cd = CallbackData("calc", "level", "count_name", "select")
@@ -12,7 +18,6 @@ select_cd = CallbackData("sel", "count_name", "select")
 async def main_keyboard(state: FSMContext):
     CURRENT_LEVEL = 0
     markup = InlineKeyboardMarkup(row_width=2)
-    count_name = ("Розетки", "Выключатели", "Бра", "Потолочный свет", "Штробление стен")
 
     for i in range(len(count_name)):
         name = count_name[i]
@@ -35,7 +40,7 @@ async def count_keyboard(state: FSMContext, count_name):
 
     CURRENT_LEVEL = 1
     markup = InlineKeyboardMarkup(row_width=2)
-    count_name2 = ("-", "+")
+    count_name2 = ("➖", "➕")
     callback_name = ("neg", "pos")
 
     for i in range(len(count_name2)):
