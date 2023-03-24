@@ -36,7 +36,7 @@ async def main_keyboard(state: FSMContext):
     return markup
 
 
-async def count_keyboard(state: FSMContext, count_name):
+async def count_keyboard(count_name):
 
     CURRENT_LEVEL = 1
     markup = InlineKeyboardMarkup(row_width=2)
